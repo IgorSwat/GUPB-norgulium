@@ -92,26 +92,31 @@ class NorgulController(controller.Controller):
         # Step 2
         # - Locate target square (either excaping mist / enemies or not) !!!
         # ...
-        target = (17, 22)    # Just a dumb square for testing
+        target = (3, 2)    # Just a dumb square for testing
 
         # Step 3
         # - Move towards target square
         # - (?) Rotate in appropriate direction to always move forward
         # ...
         try:
+            if current_pos == target:
+                return random.choice(POSSIBLE_ACTIONS)
             next_sq = norgul._find_path(current_pos, target)
         except Exception as e:
             traceback.print_exc()
             
-
+    
         # print(current_pos)
         if current_pos != next_sq:
             if next_sq != shift(current_pos, norgul.direction):
-                # if next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]):
-                #     return characters.Action.STEP_RIGHT
+                if next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]):
+                    norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]
+                    return characters.Action.TURN_RIGHT
+                else:
+                    norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) - 1) % 4]
+                    return characters.Action.TURN_LEFT
                 # elif next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 2) % 4]):
                 #     return characters.Action.STEP_BACKWARD
-                # # else next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) - 1) % 4]):
                 # else:
                 #     return characters.Action.STEP_LEFT
 
@@ -126,7 +131,7 @@ class NorgulController(controller.Controller):
         # - If target square (or set of squares) is already reached, rotate and gain more knowledge
         # ...
         
-        return random.choice(characters.Action.ATTACK)
+        return random.choice(characters.Action)
 
 
     def praise(norgul, score: int) -> None:
@@ -147,7 +152,7 @@ class NorgulController(controller.Controller):
                     if str.isspace(tile):
                         continue
 
-                    coords = coordinates.Coords(i, j)
+                    coords = coordinates.Coords(j, i)
                     tile_type = arenas.TILE_ENCODING[tile] if not str.isalpha(tile) else tiles.Land
                     tile_name = tile_type.__name__.lower()
                     weapon_name = arenas.WEAPON_ENCODING[tile].__name__.lower() if str.isalpha(tile) else None
@@ -247,11 +252,11 @@ class NorgulController(controller.Controller):
         if norgul.arena[sq_to].type in ["sea", "wall"]:
             return inf
         
-        cost = 1.0
+        cost = 1000.0
 
         # Some other character blocking the pass
         if norgul.arena[sq_to].character is not None:
-            cost += 2.0
+            cost = 1.0
 
         # Penalize walking through mist or fire
         if norgul.arena[sq_to].effects and "mist" in norgul.arena[sq_to].effects:
