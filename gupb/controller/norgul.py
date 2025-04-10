@@ -1,7 +1,9 @@
 import heapq
 import random
-
+import traceback
+from collections import defaultdict
 from math import inf
+from enum import Enum
 
 from gupb import controller
 from gupb.model import arenas
@@ -16,42 +18,127 @@ POSSIBLE_ACTIONS = [
     characters.Action.ATTACK,
 ]
 
+class Direction(Enum):
+    NORTH = -24
+    EAST = 1
+    SOUTH = 24
+    WEST = -1
+
+
+def shift(sq: coordinates.Coords, dir: Direction) -> coordinates.Coords:
+    linearized = sq[0] + sq[1] * 24
+    return coordinates.Coords((linearized + dir.value) % 24, (linearized + dir.value) // 24)
+
 
 class NorgulController(controller.Controller):
-    def __init__(self, first_name: str = "Norgul"):
-        self.first_name: str = first_name
+    Norgulium = "Norgulium"
+
+
+    def __init__(norgul, first_name: str = "Norgul"):
+        norgul.first_name: str = first_name
 
         # Global arena state
         # - Used to build connection graph and find path to given square
-        self.arena_width = 0
-        self.arena_height = 0
-        self.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
+        norgul.arena_width = 0
+        norgul.arena_height = 0
+        norgul.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
+
+        # Bot direction
+        norgul.direction: Direction = None
+
+        norgul.counter = 0
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(norgul, other: object) -> bool:
         if isinstance(other, NorgulController):
-            return self.first_name == other.first_name
+            return norgul.first_name == other.first_name
         return False
 
+    def __hash__(norgul) -> int:
+        return hash(norgul.first_name)
+    
 
-    def __hash__(self) -> int:
-        return hash(self.first_name)
+    def check_direction(norgul, current_pos, corners) -> None:
+        if corners[(current_pos[0] - 1, current_pos[1] - 1)] and corners[(current_pos[0] + 1, current_pos[1] - 1)]:
+            norgul.direction = Direction.NORTH
+        elif corners[(current_pos[0] + 1, current_pos[1] - 1)] and corners[(current_pos[0] + 1, current_pos[1] + 1)]:
+            norgul.direction = Direction.EAST
+        elif corners[(current_pos[0] + 1, current_pos[1] + 1)] and corners[(current_pos[0] - 1, current_pos[1] + 1)]:
+            norgul.direction = Direction.SOUTH
+        else:
+            norgul.direction = Direction.WEST
+            
 
 
-    def decide(self, knowledge: characters.ChampionKnowledge) -> characters.Action:
-        return random.choice(POSSIBLE_ACTIONS)
+    def decide(norgul, knowledge: characters.ChampionKnowledge) -> characters.Action:
+        current_pos = knowledge.position
+
+        corners = defaultdict(lambda: False)
+
+        norgul.counter += 1
+        if norgul.counter % 10 == 0:
+            for cord in norgul.arena:
+                norgul.arena[cord].character = None
+
+        # Step 1
+        # - Update arena state based on obtained knowledge
+        for coord, tile_info in knowledge.visible_tiles.items():
+            norgul.arena[coord] = tile_info
+            corners[coord] = True
+
+        if norgul.direction == None:
+            norgul.check_direction(current_pos, corners)
+
+        # Step 2
+        # - Locate target square (either excaping mist / enemies or not) !!!
+        # ...
+        target = (17, 22)    # Just a dumb square for testing
+
+        # Step 3
+        # - Move towards target square
+        # - (?) Rotate in appropriate direction to always move forward
+        # ...
+        try:
+            next_sq = norgul._find_path(current_pos, target)
+        except Exception as e:
+            traceback.print_exc()
+            
+
+        # print(current_pos)
+        if current_pos != next_sq:
+            if next_sq != shift(current_pos, norgul.direction):
+                # if next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]):
+                #     return characters.Action.STEP_RIGHT
+                # elif next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 2) % 4]):
+                #     return characters.Action.STEP_BACKWARD
+                # # else next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) - 1) % 4]):
+                # else:
+                #     return characters.Action.STEP_LEFT
+
+                norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]
+                return characters.Action.TURN_RIGHT
+            elif norgul.arena[next_sq].character is not None:
+                return characters.Action.ATTACK
+            else:
+                return characters.Action.STEP_FORWARD
+
+        # Step 4
+        # - If target square (or set of squares) is already reached, rotate and gain more knowledge
+        # ...
+        
+        return random.choice(characters.Action.ATTACK)
 
 
-    def praise(self, score: int) -> None:
+    def praise(norgul, score: int) -> None:
         pass
 
 
-    def reset(self, game_no: int, arena_description: arenas.ArenaDescription) -> None:
+    def reset(norgul, game_no: int, arena_description: arenas.ArenaDescription) -> None:
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
-        self._load_arena_state(arena_path)
+        norgul._load_arena_state(arena_path)
 
 
-    def _load_arena_state(self, arena_path: str) -> None:
+    def _load_arena_state(norgul, arena_path: str) -> None:
         ''' Loads and saves given arena state'''
 
         with open(arena_path, "r", encoding="utf-8") as file:
@@ -65,14 +152,14 @@ class NorgulController(controller.Controller):
                     tile_name = tile_type.__name__.lower()
                     weapon_name = arenas.WEAPON_ENCODING[tile].__name__.lower() if str.isalpha(tile) else None
 
-                    self.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, None)
+                    norgul.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, None)
 
-                    self.arena_width = j + 1
+                    norgul.arena_width = j + 1
                 
-                self.arena_height = i + 1
+                norgul.arena_height = i + 1
     
 
-    def _find_path(self, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> coordinates.Coords:
+    def _find_path(norgul, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> coordinates.Coords:
         '''
             Performs Djikstra algorithm to find the best (defined by connection weights) path from sq_from to sq_to.
 
@@ -84,8 +171,8 @@ class NorgulController(controller.Controller):
             return sq_to
 
         # Initialize distances to each square
-        distances = {coord: inf for coord in self.arena}
-        distances[sq_from]
+        distances = {coord: inf for coord in norgul.arena}
+        distances[sq_from] = 0
 
         # Priority queue representation
         # - First value is a distance to given square
@@ -93,18 +180,23 @@ class NorgulController(controller.Controller):
         heapq.heappush(heap, (0, sq_from))
 
         # Save previously searched squares to reconstruct the best path
-        previous = {coord: None for coord in self.arena}
+        previous = {coord: None for coord in norgul.arena}
         closest_alternative = None
         closest_dist = inf
+
+        visited = set()
 
         while heap:
             dist, sq = heapq.heappop(heap)
 
+            if sq in visited:
+                continue
+
             if sq == sq_to:
                 break
 
-            for neighbor in self._connections(sq):
-                cost = self._connection_cost(sq, neighbor)
+            for neighbor in norgul._connections(sq):
+                cost = norgul._connection_cost(sq, neighbor)
 
                 new_dist = dist + cost
                 if new_dist < distances[neighbor]:
@@ -115,11 +207,12 @@ class NorgulController(controller.Controller):
             # Update closest alternative path
             # - Manhattan metric
             metric_value = abs(sq[0] - sq_to[0]) + abs(sq[1] - sq_to[1])
-            if metric_value < closest_dist:
+            if dist < inf and metric_value < closest_dist:
                 closest_alternative = sq
                 closest_dist = metric_value
+            
+            visited.add(sq)
 
-        
         # Reconstruct the path
         current_sq = sq_to
 
@@ -127,14 +220,16 @@ class NorgulController(controller.Controller):
         # - In this case we want to return a path to square which is as close to sq_to as possible
         if previous[current_sq] is None:
             current_sq = closest_alternative
-        
+            if closest_alternative == sq_from:
+                return sq_from
+   
         while previous[current_sq] != sq_from:
             current_sq = previous[current_sq]
         
         return current_sq
     
 
-    def _connection_cost(self, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> float:
+    def _connection_cost(norgul, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> float:
         ''' Calculates and returns heuristic cost of moving from square sq_from to square sq_to.
         
             In other words, it returns a weight of an edge between sq_from and sq_to or 
@@ -149,41 +244,41 @@ class NorgulController(controller.Controller):
             return inf
         
         # Stone or sea on target square
-        if self.arena[sq_to].type in ["sea", "wall"]:
-            return inf
-
-        # Some other character blocking the pass
-        if self.arena[sq_to].character is not None:
+        if norgul.arena[sq_to].type in ["sea", "wall"]:
             return inf
         
         cost = 1.0
 
+        # Some other character blocking the pass
+        if norgul.arena[sq_to].character is not None:
+            cost += 2.0
+
         # Penalize walking through mist or fire
-        if self.arena[sq_to].effects and "mist" in self.arena[sq_to].effects:
+        if norgul.arena[sq_to].effects and "mist" in norgul.arena[sq_to].effects:
             cost += 5
-        if self.arena[sq_to].effects and "fire" in self.arena[sq_to].effects:
+        if norgul.arena[sq_to].effects and "fire" in norgul.arena[sq_to].effects:
             cost += 10
 
         return cost
     
 
-    def _connections(self, sq_from: coordinates.Coords) -> list[coordinates.Coords]:
+    def _connections(norgul, sq_from: coordinates.Coords) -> list[coordinates.Coords]:
         ''' Returns all adjacent squares (which can be accessed in one move from sq_from)'''
 
-        squares = [(sq_from[0] - 1, sq_from[1]),
-                   (sq_from[0], sq_from[1] + 1),
-                   (sq_from[0] + 1, sq_from[1]),
-                   (sq_from[0], sq_from[1] - 1)]
+        squares = [(sq_from[0], sq_from[1] - 1),  # gura
+                   (sq_from[0] + 1, sq_from[1]),  # prawo
+                   (sq_from[0], sq_from[1] + 1),  # duł
+                   (sq_from[0] - 1, sq_from[1])]  # lewo
 
-        return [sq for sq in squares if 0 <= sq[0] < self.arena_height and 0 <= sq[1] < self.arena_width]
+        return [sq for sq in squares if 0 <= sq[0] < norgul.arena_height and 0 <= sq[1] < norgul.arena_width]
 
-
-    @property
-    def name(self) -> str:
-        return f'{self.first_name}'
 
     @property
-    def preferred_tabard(self) -> characters.Tabard:
+    def name(norgul) -> str:
+        return f'{norgul.first_name}'
+
+    @property
+    def preferred_tabard(norgul) -> characters.Tabard:
         return characters.Tabard.NORGUL
 
 
