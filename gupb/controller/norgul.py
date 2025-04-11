@@ -21,6 +21,7 @@ class NorgulController(controller.Controller):
         norgul.arena_width = 0
         norgul.arena_height = 0
         norgul.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
+        norgul.obelisk_pos = None  # menhir
 
 
     def __eq__(norgul, other: object) -> bool:
@@ -41,11 +42,13 @@ class NorgulController(controller.Controller):
 
         for coord, tile_info in knowledge.visible_tiles.items():
             norgul.arena[coord] = tile_info
+            if tile_info.type == "menhir":
+                norgul.obelisk_pos = coord
 
         # Step 2
         # - Locate target square (either escaping mist / enemies or not) !!!
         # ...
-        target = (3, 2)    # Just a dumb square for testing
+        target = (3, 2) if norgul.obelisk_pos is None else norgul.obelisk_pos    # Follow your heart
 
         # Step 3
         # - Move towards target square
@@ -61,6 +64,10 @@ class NorgulController(controller.Controller):
                 return characters.Action.ATTACK
             else:
                 return characters.Action.STEP_FORWARD
+
+        elif norgul.arena[current_pos + current_dir.value].character is not None:
+            return characters.Action.ATTACK
+
 
         # Step 4
         # - If target square (or set of squares) is already reached, rotate and gain more knowledge
@@ -90,7 +97,7 @@ class NorgulController(controller.Controller):
                     tile_name = tile_type.__name__.lower()
                     weapon_name = arenas.WEAPON_ENCODING[tile].__name__.lower() if str.isalpha(tile) else None
 
-                    norgul.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, None)
+                    norgul.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, None)  # TODO sieci sie, nie ma byc [] ?
 
                     norgul.arena_width = j + 1
                 
