@@ -2,12 +2,26 @@ import heapq
 import random
 import traceback
 from math import inf
+from collections import defaultdict
 
 from gupb import controller
 from gupb.model import arenas
 from gupb.model import characters
 from gupb.model import coordinates
 from gupb.model import tiles
+
+
+weapons_ranking = defaultdict(
+    lambda: -1000,
+    {
+    "scroll": -2137,
+    "amulet": -69,
+    "bow": 0,
+    "knife": 1,
+    "sword": 2,
+    "axe": 3
+    }
+)
 
 
 class NorgulController(controller.Controller):
@@ -24,6 +38,8 @@ class NorgulController(controller.Controller):
         norgul.obelisk_pos = None  # menhir
         norgul.current_pos = None
         norgul.current_dir = None
+        norgul.current_weapon = "knife"
+        norgul.speedrun_mode = False
 
 
     def __eq__(norgul, other: object) -> bool:
@@ -51,11 +67,14 @@ class NorgulController(controller.Controller):
         # Step 2
         # - Locate target square (either escaping mist / enemies or not) !!!
         # ...
-        target = norgul.pick_target()
+        try:
+            target = norgul.pick_target()
+        except Exception as e:
+            traceback.print_exc()
 
         # Step 3
         # - Move towards target square
-        action = norgul.move_to_target(target, fast=True)
+        action = norgul.move_to_target(target, speedrun_mode=norgul.speedrun_mode)
 
 
 
@@ -71,25 +90,48 @@ class NorgulController(controller.Controller):
     def reset(norgul, game_no: int, arena_description: arenas.ArenaDescription) -> None:
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul._load_arena_state(arena_path)
+        # for i in norgul.arena:
+        #     print(i, norgul.arena[i])
 
 
     def pick_target(norgul):
+        max_pickup_distance = inf
+
+        best_weapon_point = weapons_ranking[norgul.current_weapon]
+        best_weapon_coords = None
+        best_weapon_name = norgul.current_weapon
+
+        # pick up a better weapon
+        for coords, tile in norgul.arena.items():
+            if tile.loot is not None and weapons_ranking[str(tile.loot)] > best_weapon_point:
+                if norgul._manhattan_distance(norgul.current_pos, coords) < max_pickup_distance:
+                    best_weapon_name = tile.loot
+                    best_weapon_point = weapons_ranking[str(tile.loot)]
+                    best_weapon_coords = coords
+
+        if best_weapon_coords is not None:
+            print(best_weapon_name)
+            print(best_weapon_point)
+            print(best_weapon_coords)
+            print("------")
+            return best_weapon_coords
+
         return (3, 2) if norgul.obelisk_pos is None else norgul.obelisk_pos  # Follow your heart
 
 
-    def move_to_target(norgul, target, fast=False):
-        """If Fast -> do not waste moves to turn"""
+    def move_to_target(norgul, target, speedrun_mode=False):
+        """If speedrun_mode -> do not waste moves to turn"""
 
         next_sq = norgul._find_path(norgul.current_pos, target)
 
         if norgul.current_pos != next_sq:
             if next_sq != norgul.current_pos + norgul.current_dir.value:
                 if next_sq == norgul.current_pos + norgul.current_dir.turn_right().value:
-                    return characters.Action.TURN_RIGHT if not fast else characters.Action.STEP_RIGHT
+                    return characters.Action.TURN_RIGHT if not speedrun_mode else characters.Action.STEP_RIGHT
                 elif next_sq == norgul.current_pos + norgul.current_dir.turn_left().value:
-                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_LEFT
+                    return characters.Action.TURN_LEFT if not speedrun_mode else characters.Action.STEP_LEFT
                 else:
-                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_BACKWARD
+                    return characters.Action.TURN_LEFT if not speedrun_mode else characters.Action.STEP_BACKWARD
             elif norgul.arena[next_sq].character is not None:
                 return characters.Action.ATTACK
             else:
@@ -113,7 +155,7 @@ class NorgulController(controller.Controller):
                     tile_name = tile_type.__name__.lower()
                     weapon_name = arenas.WEAPON_ENCODING[tile].__name__.lower() if str.isalpha(tile) else None
 
-                    norgul.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, None)  # TODO sieci sie, nie ma byc [] ?
+                    norgul.arena[coords] = tiles.TileDescription(tile_name, weapon_name, None, None, [])
 
                     norgul.arena_width = j + 1
                 
@@ -219,6 +261,11 @@ class NorgulController(controller.Controller):
         # Some other character blocking the pass
         if norgul.arena[sq_to].character is not None:
             cost = 3.0
+
+        # Penalize swapping to a worse weapon
+        # if norgul.arena[sq_to].loot is not None:
+        #     if weapons_ranking[norgul.current_weapon] > weapons_ranking[norgul.arena[sq_to].loot.name]:
+        #         cost += 5
 
         # Penalize walking through mist or fire
         if norgul.arena[sq_to].effects and "mist" in norgul.arena[sq_to].effects:
