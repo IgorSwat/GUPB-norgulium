@@ -1,27 +1,13 @@
 import heapq
 import random
 import traceback
-from collections import defaultdict
 from math import inf
-from enum import Enum
 
 from gupb import controller
 from gupb.model import arenas
 from gupb.model import characters
 from gupb.model import coordinates
 from gupb.model import tiles
-
-POSSIBLE_ACTIONS = [
-    characters.Action.TURN_LEFT,
-    characters.Action.TURN_RIGHT,
-    characters.Action.STEP_FORWARD,
-    characters.Action.ATTACK,
-]
-
-
-# Shifts a square in given direction
-def shift(sq: coordinates.Coords, dir: characters.Facing) -> coordinates.Coords:
-    return sq + dir.value
 
 
 class NorgulController(controller.Controller):
@@ -35,7 +21,7 @@ class NorgulController(controller.Controller):
         norgul.arena_width = 0
         norgul.arena_height = 0
         norgul.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
-        
+
 
     def __eq__(norgul, other: object) -> bool:
         if isinstance(other, NorgulController):
@@ -57,19 +43,17 @@ class NorgulController(controller.Controller):
             norgul.arena[coord] = tile_info
 
         # Step 2
-        # - Locate target square (either excaping mist / enemies or not) !!!
+        # - Locate target square (either escaping mist / enemies or not) !!!
         # ...
         target = (3, 2)    # Just a dumb square for testing
 
         # Step 3
         # - Move towards target square
-        # - (?) Rotate in appropriate direction to always move forward
-        # ...
         next_sq = norgul._find_path(current_pos, target)
             
         if current_pos != next_sq:
-            if next_sq != shift(current_pos, current_dir):
-                if next_sq == shift(current_pos, current_dir.turn_right()):
+            if next_sq != current_pos + current_dir.value:
+                if next_sq == current_pos + current_dir.turn_right().value:
                     return characters.Action.TURN_RIGHT
                 else:
                     return characters.Action.TURN_LEFT
@@ -80,8 +64,7 @@ class NorgulController(controller.Controller):
 
         # Step 4
         # - If target square (or set of squares) is already reached, rotate and gain more knowledge
-        # ...
-        return random.choice(POSSIBLE_ACTIONS)
+        return characters.Action.TURN_RIGHT
 
 
     def praise(norgul, score: int) -> None:
@@ -91,7 +74,6 @@ class NorgulController(controller.Controller):
     def reset(norgul, game_no: int, arena_description: arenas.ArenaDescription) -> None:
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul._load_arena_state(arena_path)
-        print(shift(coordinates.Coords(0, 0), characters.Facing.UP))
 
 
     def _load_arena_state(norgul, arena_path: str) -> None:
@@ -227,10 +209,7 @@ class NorgulController(controller.Controller):
     def _connections(norgul, sq_from: coordinates.Coords) -> list[coordinates.Coords]:
         ''' Returns all adjacent squares (which can be accessed in one move from sq_from)'''
 
-        squares = [(sq_from[0], sq_from[1] - 1),  # gura
-                   (sq_from[0] + 1, sq_from[1]),  # prawo
-                   (sq_from[0], sq_from[1] + 1),  # duł
-                   (sq_from[0] - 1, sq_from[1])]  # lewo
+        squares = [sq_from + dir.value for dir in characters.Facing]
 
         return [sq for sq in squares if 0 <= sq[0] < norgul.arena_height and 0 <= sq[1] < norgul.arena_width]
 
