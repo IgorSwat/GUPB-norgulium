@@ -18,21 +18,14 @@ POSSIBLE_ACTIONS = [
     characters.Action.ATTACK,
 ]
 
-class Direction(Enum):
-    NORTH = -24
-    EAST = 1
-    SOUTH = 24
-    WEST = -1
 
-
-def shift(sq: coordinates.Coords, dir: Direction) -> coordinates.Coords:
-    linearized = sq[0] + sq[1] * 24
-    return coordinates.Coords((linearized + dir.value) % 24, (linearized + dir.value) // 24)
+# Shifts a square in given direction
+def shift(sq: coordinates.Coords, dir: characters.Facing) -> coordinates.Coords:
+    return sq + dir.value
 
 
 class NorgulController(controller.Controller):
     Norgulium = "Norgulium"
-
 
     def __init__(norgul, first_name: str = "Norgul"):
         norgul.first_name: str = first_name
@@ -42,52 +35,26 @@ class NorgulController(controller.Controller):
         norgul.arena_width = 0
         norgul.arena_height = 0
         norgul.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
-
-        # Bot direction
-        norgul.direction: Direction = None
-
-        norgul.counter = 0
-
+        
 
     def __eq__(norgul, other: object) -> bool:
         if isinstance(other, NorgulController):
             return norgul.first_name == other.first_name
         return False
 
+
     def __hash__(norgul) -> int:
         return hash(norgul.first_name)
-    
-
-    def check_direction(norgul, current_pos, corners) -> None:
-        if corners[(current_pos[0] - 1, current_pos[1] - 1)] and corners[(current_pos[0] + 1, current_pos[1] - 1)]:
-            norgul.direction = Direction.NORTH
-        elif corners[(current_pos[0] + 1, current_pos[1] - 1)] and corners[(current_pos[0] + 1, current_pos[1] + 1)]:
-            norgul.direction = Direction.EAST
-        elif corners[(current_pos[0] + 1, current_pos[1] + 1)] and corners[(current_pos[0] - 1, current_pos[1] + 1)]:
-            norgul.direction = Direction.SOUTH
-        else:
-            norgul.direction = Direction.WEST
-            
 
 
     def decide(norgul, knowledge: characters.ChampionKnowledge) -> characters.Action:
-        current_pos = knowledge.position
-
-        corners = defaultdict(lambda: False)
-
-        norgul.counter += 1
-        if norgul.counter % 10 == 0:
-            for cord in norgul.arena:
-                norgul.arena[cord].character = None
-
         # Step 1
         # - Update arena state based on obtained knowledge
+        current_pos = knowledge.position
+        current_dir = knowledge.visible_tiles[current_pos].character.facing
+
         for coord, tile_info in knowledge.visible_tiles.items():
             norgul.arena[coord] = tile_info
-            corners[coord] = True
-
-        if norgul.direction == None:
-            norgul.check_direction(current_pos, corners)
 
         # Step 2
         # - Locate target square (either excaping mist / enemies or not) !!!
@@ -98,30 +65,14 @@ class NorgulController(controller.Controller):
         # - Move towards target square
         # - (?) Rotate in appropriate direction to always move forward
         # ...
-        try:
-            if current_pos == target:
-                return random.choice(POSSIBLE_ACTIONS)
-            next_sq = norgul._find_path(current_pos, target)
-        except Exception as e:
-            traceback.print_exc()
+        next_sq = norgul._find_path(current_pos, target)
             
-    
-        # print(current_pos)
         if current_pos != next_sq:
-            if next_sq != shift(current_pos, norgul.direction):
-                if next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]):
-                    norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]
+            if next_sq != shift(current_pos, current_dir):
+                if next_sq == shift(current_pos, current_dir.turn_right()):
                     return characters.Action.TURN_RIGHT
                 else:
-                    norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) - 1) % 4]
                     return characters.Action.TURN_LEFT
-                # elif next_sq == shift(current_pos, list(Direction)[(list(Direction).index(norgul.direction) + 2) % 4]):
-                #     return characters.Action.STEP_BACKWARD
-                # else:
-                #     return characters.Action.STEP_LEFT
-
-                norgul.direction = list(Direction)[(list(Direction).index(norgul.direction) + 1) % 4]
-                return characters.Action.TURN_RIGHT
             elif norgul.arena[next_sq].character is not None:
                 return characters.Action.ATTACK
             else:
@@ -130,8 +81,7 @@ class NorgulController(controller.Controller):
         # Step 4
         # - If target square (or set of squares) is already reached, rotate and gain more knowledge
         # ...
-        
-        return random.choice(characters.Action)
+        return random.choice(POSSIBLE_ACTIONS)
 
 
     def praise(norgul, score: int) -> None:
@@ -141,6 +91,7 @@ class NorgulController(controller.Controller):
     def reset(norgul, game_no: int, arena_description: arenas.ArenaDescription) -> None:
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul._load_arena_state(arena_path)
+        print(shift(coordinates.Coords(0, 0), characters.Facing.UP))
 
 
     def _load_arena_state(norgul, arena_path: str) -> None:
@@ -162,6 +113,12 @@ class NorgulController(controller.Controller):
                     norgul.arena_width = j + 1
                 
                 norgul.arena_height = i + 1
+    
+    def _forget_other_characters(norgul) -> None:
+        ''' Clears all the information about other characters from arena state map'''
+
+        for cord in norgul.arena:
+            norgul.arena[cord].character = None
     
 
     def _find_path(norgul, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> coordinates.Coords:
@@ -252,11 +209,11 @@ class NorgulController(controller.Controller):
         if norgul.arena[sq_to].type in ["sea", "wall"]:
             return inf
         
-        cost = 1000.0
+        cost = 1.0
 
         # Some other character blocking the pass
         if norgul.arena[sq_to].character is not None:
-            cost = 1.0
+            cost = 3.0
 
         # Penalize walking through mist or fire
         if norgul.arena[sq_to].effects and "mist" in norgul.arena[sq_to].effects:
