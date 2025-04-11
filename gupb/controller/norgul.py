@@ -22,6 +22,8 @@ class NorgulController(controller.Controller):
         norgul.arena_height = 0
         norgul.arena : dict[coordinates.Coords, tiles.TileDescription] = {}
         norgul.obelisk_pos = None  # menhir
+        norgul.current_pos = None
+        norgul.current_dir = None
 
 
     def __eq__(norgul, other: object) -> bool:
@@ -37,8 +39,9 @@ class NorgulController(controller.Controller):
     def decide(norgul, knowledge: characters.ChampionKnowledge) -> characters.Action:
         # Step 1
         # - Update arena state based on obtained knowledge
-        current_pos = knowledge.position
-        current_dir = knowledge.visible_tiles[current_pos].character.facing
+        norgul.current_pos = knowledge.position
+        norgul.current_dir = knowledge.visible_tiles[norgul.current_pos].character.facing
+        action = None
 
         for coord, tile_info in knowledge.visible_tiles.items():
             norgul.arena[coord] = tile_info
@@ -48,30 +51,17 @@ class NorgulController(controller.Controller):
         # Step 2
         # - Locate target square (either escaping mist / enemies or not) !!!
         # ...
-        target = (3, 2) if norgul.obelisk_pos is None else norgul.obelisk_pos    # Follow your heart
+        target = norgul.pick_target()
 
         # Step 3
         # - Move towards target square
-        next_sq = norgul._find_path(current_pos, target)
-            
-        if current_pos != next_sq:
-            if next_sq != current_pos + current_dir.value:
-                if next_sq == current_pos + current_dir.turn_right().value:
-                    return characters.Action.TURN_RIGHT
-                else:
-                    return characters.Action.TURN_LEFT
-            elif norgul.arena[next_sq].character is not None:
-                return characters.Action.ATTACK
-            else:
-                return characters.Action.STEP_FORWARD
+        action = norgul.move_to_target(target, fast=True)
 
-        elif norgul.arena[current_pos + current_dir.value].character is not None:
-            return characters.Action.ATTACK
 
 
         # Step 4
         # - If target square (or set of squares) is already reached, rotate and gain more knowledge
-        return characters.Action.TURN_RIGHT
+        return action if action is not None else characters.Action.TURN_RIGHT
 
 
     def praise(norgul, score: int) -> None:
@@ -81,6 +71,32 @@ class NorgulController(controller.Controller):
     def reset(norgul, game_no: int, arena_description: arenas.ArenaDescription) -> None:
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul._load_arena_state(arena_path)
+
+
+    def pick_target(norgul):
+        return (3, 2) if norgul.obelisk_pos is None else norgul.obelisk_pos  # Follow your heart
+
+
+    def move_to_target(norgul, target, fast=False):
+        """If Fast -> do not waste moves to turn"""
+
+        next_sq = norgul._find_path(norgul.current_pos, target)
+
+        if norgul.current_pos != next_sq:
+            if next_sq != norgul.current_pos + norgul.current_dir.value:
+                if next_sq == norgul.current_pos + norgul.current_dir.turn_right().value:
+                    return characters.Action.TURN_RIGHT if not fast else characters.Action.STEP_RIGHT
+                elif next_sq == norgul.current_pos + norgul.current_dir.turn_left().value:
+                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_LEFT
+                else:
+                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_BACKWARD
+            elif norgul.arena[next_sq].character is not None:
+                return characters.Action.ATTACK
+            else:
+                return characters.Action.STEP_FORWARD
+
+        elif norgul.arena[norgul.current_pos + norgul.current_dir.value].character is not None:
+            return characters.Action.ATTACK
 
 
     def _load_arena_state(norgul, arena_path: str) -> None:
