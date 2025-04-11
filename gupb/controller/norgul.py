@@ -157,7 +157,7 @@ class NorgulController(controller.Controller):
             
             # Update closest alternative path
             # - Manhattan metric
-            metric_value = abs(sq[0] - sq_to[0]) + abs(sq[1] - sq_to[1])
+            metric_value = norgul._manhattan_distance(sq, sq_to)
             if dist < inf and metric_value < closest_dist:
                 closest_alternative = sq
                 closest_dist = metric_value
@@ -219,6 +219,10 @@ class NorgulController(controller.Controller):
         squares = [sq_from + dir.value for dir in characters.Facing]
 
         return [sq for sq in squares if 0 <= sq[0] < norgul.arena_height and 0 <= sq[1] < norgul.arena_width]
+
+
+    def _manhattan_distance(norgul, coord1, coord2) -> int:
+        return abs(coord1[0] - coord2[0]) + abs(coord1[1] - coord2[1])
 
 
     @property
