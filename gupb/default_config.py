@@ -3,7 +3,7 @@ from gupb.controller import random
 from gupb.controller.camperbot import camperbot
 from gupb.controller.neat import kim_dzong_neat_jr
 from gupb.controller import kirby_learning
-from gupb.controller import norgul
+from gupb.controller.norgul import norgul
 from gupb.controller import reinforced_rogue
 from gupb.controller import garek
 from gupb.controller import rustler
@@ -34,9 +34,9 @@ CONFIGURATION = {
         Keramzytowy_mocarz.Keramzytowy_mocarz("KERAMZYTOWY_MOCARZ"),
     ],
     'start_balancing': False,
-    'visualise': False,
+    'visualise': True,
     'show_sight': None,
-    'runs_no': 1000,
+    'runs_no': 1,
     'profiling_metrics': [],
 }
 
