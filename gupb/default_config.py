@@ -18,6 +18,7 @@ keyboard_controller = keyboard.KeyboardController()
 CONFIGURATION = {
     'arenas': [
         'ordinary_chaos',
+        # 'isolated_shrine'
     ],
     'controllers': [
         random.RandomController("Alice"),
@@ -25,17 +26,17 @@ CONFIGURATION = {
         kim_dzong_neat_jr.KimDzongNeatJuniorController(),
         kirby_learning.KirbyLearningController("KirbyLearning"),
         norgul.NorgulController("Norgul"),
-        reinforced_rogue.ReinforcedRogueController("ReinforcedRogue"),
-        garek.GarekController("Garek"),
-        rustler.Rustler("Rustler"),
-        bupg.BUPGController("BUPG"),
-        roomba.RoombaController("Roomba"),
-        pirat.PiratController("Pirat"),
-        Keramzytowy_mocarz.Keramzytowy_mocarz("KERAMZYTOWY_MOCARZ"),
+        # reinforced_rogue.ReinforcedRogueController("ReinforcedRogue"),
+        # garek.GarekController("Garek"),
+        # rustler.Rustler("Rustler"),
+        # bupg.BUPGController("BUPG"),
+        # roomba.RoombaController("Roomba"),
+        # pirat.PiratController("Pirat"),
+        # Keramzytowy_mocarz.Keramzytowy_mocarz("KERAMZYTOWY_MOCARZ"),
     ],
     'start_balancing': False,
     'visualise': True,
-    'show_sight': None,
+    'show_sight': True,
     'runs_no': 1,
     'profiling_metrics': [],
 }
