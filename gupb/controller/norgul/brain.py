@@ -1,6 +1,7 @@
 from gupb.controller.norgul.memory import Memory
 from gupb.controller.norgul.movement import MotorCortex
 from gupb.controller.norgul.navigation import Navigator
+from gupb.controller.norgul.exploration import Explorator
 
 from gupb.model import arenas
 from gupb.model import characters
@@ -25,6 +26,7 @@ class Brain:
         # Brain components
         self.navigator = Navigator(self.memory.arena)
         self.motor = MotorCortex(self.memory)
+        self.explorator = Explorator(self.memory)
 
         # Hyperparameters
         # TODO: move into separate config file

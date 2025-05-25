@@ -41,7 +41,9 @@ class NorgulController(controller.Controller):
 
             # Step 2
             # - Locate target square (either escaping mist / enemies or not) !!!
-            target = norgul.brain.pick_target()
+            # target = norgul.brain.pick_target()
+            target = norgul.brain.explorator.pick_area()
+            # print(target)
 
             # Step 3
             # - Move towards target square
@@ -63,7 +65,7 @@ class NorgulController(controller.Controller):
 
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul.memory.arena.load(arena_path)
-
+        norgul.memory.exploration.load(norgul.memory.arena)
 
     @property
     def name(norgul) -> str:
