@@ -89,6 +89,14 @@ class ArenaKnowledge:
     # --------------------------------
     # Arena knowledge - simple getters
     # --------------------------------
+
+    # Getters - tile correctness
+    # - Check with respect to arena bounds
+    # - NOTE: It can be used with 'in' operator, such as: if sq in arena
+    def __contains__(self, tile: coordinates.Coords) -> bool:
+        ''' Returns true if given tile lies inside the arena bounds, and false otherwise '''
+
+        return 0 <= tile[0] < self.width and 0 <= tile[1] < self.height
     
     # Getters - tile info
     # - NOTE: It's recommended to use this method instead of directly accessing the arena dictionary
@@ -97,14 +105,9 @@ class ArenaKnowledge:
 
             Allows a situation, where arena state is not loaded directly and tiles are initially set as unseen.
         '''
-
-        x, y = coord
-
         # Perform bound checks
-        if x < 0 or x >= self.width:
-            raise ValueError(f"Invalid coordinate: x = {x}")
-        if y < 0 or y >= self.height:
-            raise ValueError(f"Invalid coordinate: y = {y}")
+        if not self.__contains__(coord):
+            raise ValueError(f"Invalid coordinate: {coord}")
         
         # Unseen tile
         if coord not in self._arena:

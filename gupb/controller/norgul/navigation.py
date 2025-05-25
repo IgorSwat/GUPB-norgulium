@@ -118,6 +118,10 @@ class Navigator:
         if self.arena[sq_to].type in ["sea", "wall"]:
             return inf
         
+        # Forest occupied by other (immortal) player
+        if self.arena[sq_to].type == "forest" and self.arena[sq_to].character is not None:
+            return inf
+        
         cost = 1.0
 
         # Some other character blocking the pass

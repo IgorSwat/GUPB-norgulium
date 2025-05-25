@@ -1,4 +1,5 @@
 from gupb.controller.norgul.memory import Memory
+from gupb.controller.norgul.movement import MotorCortex
 from gupb.controller.norgul.navigation import Navigator
 
 from gupb.model import arenas
@@ -23,6 +24,7 @@ class Brain:
 
         # Brain components
         self.navigator = Navigator(self.memory.arena)
+        self.motor = MotorCortex(self.memory)
 
         # Hyperparameters
         # TODO: move into separate config file
@@ -92,18 +94,7 @@ class Brain:
         next_sq = norgul.navigator.find_path(norgul.memory.pos, target)
 
         if norgul.memory.pos != next_sq:
-            if next_sq != norgul.memory.pos + norgul.memory.dir.value:
-                if next_sq == norgul.memory.pos + norgul.memory.dir.turn_right().value:
-                    return characters.Action.TURN_RIGHT if not fast else characters.Action.STEP_RIGHT
-                elif next_sq == norgul.memory.pos + norgul.memory.dir.turn_left().value:
-                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_LEFT
-                else:
-                    return characters.Action.TURN_LEFT if not fast else characters.Action.STEP_BACKWARD
-            elif norgul.memory.arena[next_sq].character is not None:
-                return characters.Action.ATTACK
-            else:
-                return characters.Action.STEP_FORWARD
-
+            return norgul.motor.move_to(next_sq, quick=fast)
         
         elif norgul.memory.arena[norgul.memory.pos + norgul.memory.dir.value].character is not None:
             if norgul.memory.arena[norgul.memory.pos + norgul.memory.dir.value].type == "forest":
