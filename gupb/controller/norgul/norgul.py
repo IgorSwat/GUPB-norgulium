@@ -42,8 +42,14 @@ class NorgulController(controller.Controller):
             # Step 2
             # - Locate target square (either escaping mist / enemies or not) !!!
             # target = norgul.brain.pick_target()
-            target = norgul.brain.explorator.pick_area()
-            # print(target)
+            target = norgul.brain.collector.best_pickup()
+            if target is None:
+                target = norgul.brain.explorator.pick_area()
+                print("Exploring:", target)
+            else:
+                if target == norgul.memory.pos:
+                    target = norgul.memory.pos + characters.Facing.RIGHT.value      # TODO: This is a total shit and must be changed
+                print("Collecting:", target)
 
             # Step 3
             # - Move towards target square

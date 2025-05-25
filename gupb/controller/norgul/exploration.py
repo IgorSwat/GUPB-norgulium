@@ -33,7 +33,7 @@ class Explorator:
         # Iterate over all unexplored areas and find the most appealing one. Key rules:
         # - The earlier an area was visited, the greater priority it has (exponential relationship)
         # - The further an area is from the bot, the lower priority it has (exponential relationship)
-        max_priority = 0
+        max_priority = 0.0
         best_area = None
 
         for area, explor_data in self.explor_knowledge.areas.items():

@@ -2,6 +2,7 @@ from gupb.controller.norgul.memory import Memory
 from gupb.controller.norgul.movement import MotorCortex
 from gupb.controller.norgul.navigation import Navigator
 from gupb.controller.norgul.exploration import Explorator
+from gupb.controller.norgul.collection import Collector
 
 from gupb.model import arenas
 from gupb.model import characters
@@ -17,6 +18,8 @@ from itertools import product
 # Norgul's brain class
 # --------------------
 
+# This class menages all the submodules (navigation, exploration, etc.) and produces a final decision
+# - NOTE: all complex decision making should be put here (not in the NorgulController!)
 class Brain:
 
     def __init__(self, memory: Memory):
@@ -24,9 +27,10 @@ class Brain:
         self.memory = memory
 
         # Brain components
-        self.navigator = Navigator(self.memory.arena)
+        self.navigator = Navigator(self.memory)
         self.motor = MotorCortex(self.memory)
         self.explorator = Explorator(self.memory)
+        self.collector = Collector(self.memory)
 
         # Hyperparameters
         # TODO: move into separate config file

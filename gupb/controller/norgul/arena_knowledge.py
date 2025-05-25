@@ -4,8 +4,10 @@ from gupb.model import arenas
 from gupb.model import characters
 from gupb.model import coordinates
 from gupb.model import tiles
+from gupb.model import weapons
 
 from math import inf
+from typing import Dict, Set
 
 
 # ---------------------
@@ -27,7 +29,10 @@ class ArenaKnowledge:
         # Helper structures
         # - Save most important arena tiles and properties to separate variables/structures to allow for quick search for given type of thing
         self.obelisk_pos = None
-        self.forest: set[coordinates.Coords] = set()
+        self.forest: Set[coordinates.Coords] = set()
+        self.weapons: Dict[coordinates.Coords, weapons.WeaponDescription] = {}
+        self.potions: Set[coordinates.Coords] = set()
+        self.players: Dict[coordinates.Coords, characters.ChampionDescription] = {}
         self.any_mist = False
 
     # -------------------------------
@@ -40,6 +45,9 @@ class ArenaKnowledge:
 
         self.obelisk_pos = None
         self.forest.clear()
+        self.weapons.clear()
+        self.potions.clear()
+        self.players.clear()
         self.any_mist = False
     
     def load(self, arena_path: str) -> None:
@@ -65,6 +73,9 @@ class ArenaKnowledge:
                     # Update helper structures
                     if tile_name == "forest":
                         self.forest.add(coords)
+                    
+                    if weapon_name is not None:
+                        self.weapons[coords] = weapons.WeaponDescription(weapon_name)
 
                     self.width = j + 1
                 
@@ -79,10 +90,25 @@ class ArenaKnowledge:
 
         for coord, tile_info in knowledge.visible_tiles.items():
             self._arena[coord] = tile_info
+
+            # Tile type
             if tile_info.type == "menhir":
                 self.obelisk_pos = coord
             elif tile_info.type == "forest" and coord not in self.forest:
                 self.forest.add(coord)
+
+            # Weapons & potions
+            if tile_info.loot is not None:
+                self.weapons[coord] = tile_info.loot
+            elif coord in self.weapons:
+                self.weapons.pop(coord)
+            
+            if tile_info.consumable is not None:
+                self.potions.add(coord)
+            elif coord in self.potions:
+                self.potions.remove(coord)
+        
+            # Effects
             if self._arena[coord].effects and ("mist",) in self._arena[coord].effects:
                 self.any_mist = True
 

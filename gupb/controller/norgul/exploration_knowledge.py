@@ -75,9 +75,14 @@ class ExplorationKnowledge:
             for j in range(0, arena.height, 3):
                 area = Area(coordinates.Coords(i, j))
 
-                # TODO: Add check whether an area has at least 3 tiles different than stone and water
-                #       (to prevent Norgul from freezing)
-                if area.size(arena) >= 6:
+                accessable_tiles = 0
+                for k in range(3):
+                    for l in range(3):
+                        sq = coordinates.Coords(i + k, j + l)
+                        if sq in arena and arena[sq].type != "wall" and arena[sq].type != "sea":
+                            accessable_tiles += 1
+
+                if area.size(arena) >= 6 and accessable_tiles >= 3:
                     self.areas[area] = AreaExplorData(0, set())
     
     # ---------------------------------------

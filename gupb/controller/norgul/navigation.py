@@ -1,5 +1,6 @@
-from gupb.controller.norgul.arena_knowledge import ArenaKnowledge
+from gupb.controller.norgul.memory import Memory
 from gupb.controller.norgul.misc import manhattan_dist
+from gupb.controller.norgul.config import WEAPON_VALUES
 
 from gupb.model import coordinates
 
@@ -16,8 +17,9 @@ from math import inf
 # A set of algorithms for moving and navigating around given arena
 class Navigator:
 
-    def __init__(self, arena_knowledge: ArenaKnowledge):
-        self.arena = arena_knowledge
+    def __init__(self, memory: Memory):
+        self.memory = memory
+        self.arena = memory.arena
     
     # ------------------------
     # Navigator - path finding
@@ -129,8 +131,11 @@ class Navigator:
             cost += 3.0
         
         # Weapons
-        if self.arena[sq_to].loot is not None and self.arena[sq_to].loot in ["scroll", "amulet"]:
-            cost += 100.0
+        if sq_to in self.arena.weapons:
+            if self.arena.weapons[sq_to].name in ["scroll", "amulet"]:
+                cost += 100.0
+            else:
+                cost += max(0, WEAPON_VALUES[self.memory.weapon] - WEAPON_VALUES[self.arena.weapons[sq_to].name])
         
         # Potions
         if self.arena[sq_to].consumable is not None and self.arena[sq_to].consumable == "potion":
