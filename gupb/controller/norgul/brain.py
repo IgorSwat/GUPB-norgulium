@@ -50,18 +50,24 @@ class Brain:
         if target is None:
             # Try to fight someone
             easy_target, chances = self.combat.find_target(avoid_mist=True)
-            if chances > COMBAT_THRESHOLD:
-                print("Fighting:", easy_target)
-                action = self.combat.fight_control(easy_target, safe_mode=False)
-                return action
+
+            if easy_target is not None:
+                if not isinstance(easy_target, coordinates.Coords):
+                    easy_target = coordinates.Coords(easy_target[0], easy_target[1])
+
+                if chances > COMBAT_THRESHOLD:
+                    # print("Fighting:", easy_target)
+                    action = self.combat.fight_control(easy_target, safe_mode=False)
+                    return action
 
             # If you can't fight, then try to explore instead
             target = self.explorator.pick_area()
-            print("Exploring:", target)
+            # print("Exploring:", target)
         else:
             if target == self.memory.pos:
-                target = self.memory.pos + characters.Facing.RIGHT.value      # TODO: This is a total shit and must be changed
-            print("Collecting:", target)
+                target = self.memory.pos + characters.Facing.random().value      # TODO: This is a total shit and must be changed
+                return self.move_to_target(target, fast=True)
+            # print("Collecting:", target)
         
         return self.move_to_target(target, fast=False)
 

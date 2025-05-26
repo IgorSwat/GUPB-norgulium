@@ -97,8 +97,11 @@ class ExplorationKnowledge:
         explored = set()
 
         # We don't need any extra info about tiles, just the fact that they were observed
-        for coord in knowledge.visible_tiles:
+        for coord, tile_info in knowledge.visible_tiles.items():
             area = Area(coord)
+
+            if ("mist",) in tile_info.effects and area in self.areas:
+                self.areas.pop(area)
 
             if area in self.areas:
                 if area == Area(knowledge.position):

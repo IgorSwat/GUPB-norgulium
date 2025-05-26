@@ -93,8 +93,8 @@ class CombatEngine:
         # And obtain some information about us and enemy
         our_weapon = get_weapon(self.memory.weapon_name)
         enemy_weapon = get_weapon(enemy.weapon.name)
-        our_attack_area = our_weapon.cut_positions(arenas.Terrain, self.memory.pos, self.memory.dir)
-        enemy_attack_area = enemy_weapon.cut_positions(arenas.Terrain, enemy_sq, enemy.facing)
+        our_attack_area = our_weapon.cut_positions(self.memory.terrain, self.memory.pos, self.memory.dir)
+        enemy_attack_area = enemy_weapon.cut_positions(self.memory.terrain, enemy_sq, enemy.facing)
 
         # Case 1 - we can already attack the enemy
         # - Let's smash him hard...

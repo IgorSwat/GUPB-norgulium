@@ -29,6 +29,7 @@ class Memory:
 
         # Other things
         self.time = 0
+        self.terrain = {}
     
     # ----------------------
     # Memory - static update
@@ -44,6 +45,7 @@ class Memory:
         self.exploration.areas.clear()
 
         self.time = 0
+        self.terrain = {}
     
     # ----------------------
     # Memory - dynamic update

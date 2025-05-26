@@ -17,8 +17,11 @@ keyboard_controller = keyboard.KeyboardController()
 
 CONFIGURATION = {
     'arenas': [
-        'ordinary_chaos',
+        # 'ordinary_chaos',
         # 'isolated_shrine'
+        # "archipelago"
+        # "island"
+        "wasteland"
     ],
     'controllers': [
         random.RandomController("Alice"),
@@ -27,12 +30,12 @@ CONFIGURATION = {
         kirby_learning.KirbyLearningController("KirbyLearning"),
         norgul.NorgulController("Norgul"),
         # reinforced_rogue.ReinforcedRogueController("ReinforcedRogue"),
-        # garek.GarekController("Garek"),
-        # rustler.Rustler("Rustler"),
-        # bupg.BUPGController("BUPG"),
-        # roomba.RoombaController("Roomba"),
-        # pirat.PiratController("Pirat"),
-        # Keramzytowy_mocarz.Keramzytowy_mocarz("KERAMZYTOWY_MOCARZ"),
+        garek.GarekController("Garek"),
+        rustler.Rustler("Rustler"),
+        bupg.BUPGController("BUPG"),
+        roomba.RoombaController("Roomba"),
+        pirat.PiratController("Pirat"),
+        Keramzytowy_mocarz.Keramzytowy_mocarz("KERAMZYTOWY_MOCARZ"),
     ],
     'start_balancing': False,
     'visualise': True,

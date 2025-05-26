@@ -50,8 +50,6 @@ class Explorator:
             # Final formula for priority
             priority = EXPLORATION_TIME_FACTOR ** time_diff * EXPLORATION_DISTANCE_FACTOR ** dist
 
-            # print(area.center, ", priority:", priority)
-
             if priority > max_priority:
                 max_priority = priority
                 best_area = area

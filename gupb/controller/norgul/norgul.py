@@ -18,6 +18,7 @@ class NorgulController(controller.Controller):
 
         # Norgul's memory
         norgul.memory = Memory()
+        norgul.arena = None
 
         # Norgul's brain
         norgul.brain = Brain(norgul.memory)
@@ -59,6 +60,8 @@ class NorgulController(controller.Controller):
 
         arena_path = "resources/arenas/" + arena_description.name + ".gupb"
         norgul.memory.arena.load(arena_path)
+        norgul.arena = arenas.Arena.load(arena_description.name)
+        norgul.memory.terrain = norgul.arena.terrain
         norgul.memory.exploration.load(norgul.memory.arena)
 
     @property
