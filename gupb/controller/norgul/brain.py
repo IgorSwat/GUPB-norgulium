@@ -5,6 +5,7 @@ from gupb.controller.norgul.exploration import Explorator
 from gupb.controller.norgul.collection import Collector
 from gupb.controller.norgul.combat import CombatEngine
 from gupb.controller.norgul.config import COMBAT_THRESHOLD
+from gupb.controller.norgul.misc import max_dist
 
 from gupb.model import arenas
 from gupb.model import characters
@@ -49,7 +50,10 @@ class Brain:
         target = self.collector.best_pickup()
         if target is None:
             # Try to fight someone
-            easy_target, chances = self.combat.find_target(avoid_mist=True)
+            avoid_mnist = True
+            if self.memory.arena.obelisk_pos is not None and max_dist(self.memory.pos, self.memory.arena.obelisk_pos) < 5:
+                avoid_mnist = False
+            easy_target, chances = self.combat.find_target(avoid_mist=avoid_mnist)
 
             if easy_target is not None:
                 if not isinstance(easy_target, coordinates.Coords):
@@ -62,6 +66,7 @@ class Brain:
 
             # If you can't fight, then try to explore instead
             target = self.explorator.pick_area()
+
             # print("Exploring:", target)
         else:
             if target == self.memory.pos:
@@ -69,6 +74,9 @@ class Brain:
                 return self.move_to_target(target, fast=True)
             # print("Collecting:", target)
         
+        if target is None or self.mist_close():
+            target = self.memory.arena.obelisk_pos
+
         return self.move_to_target(target, fast=False)
 
     # TODO: replace with better code
@@ -84,3 +92,12 @@ class Brain:
             if norgul.memory.arena[norgul.memory.pos + norgul.memory.dir.value].type == "forest":
                 return None
             return characters.Action.ATTACK
+    
+    def mist_close(self) -> bool:
+        for i in range(-2, 3):
+            for j in range(-2, 3):
+                tile = coordinates.Coords(self.memory.pos[0] + i, self.memory.pos[1] + j)
+                if tile in self.memory.arena and ("mist",) in self.memory.arena[tile].effects:
+                    return True
+        
+        return False

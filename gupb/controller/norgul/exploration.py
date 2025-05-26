@@ -54,4 +54,4 @@ class Explorator:
                 max_priority = priority
                 best_area = area
         
-        return best_area.center
+        return best_area.center if best_area is not None else None

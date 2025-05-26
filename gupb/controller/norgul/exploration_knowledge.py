@@ -102,6 +102,8 @@ class ExplorationKnowledge:
 
             if ("mist",) in tile_info.effects and area in self.areas:
                 self.areas.pop(area)
+                if area in explored:
+                    explored.remove(area)
 
             if area in self.areas:
                 if area == Area(knowledge.position):

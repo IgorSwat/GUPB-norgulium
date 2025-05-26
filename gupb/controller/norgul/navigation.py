@@ -127,8 +127,8 @@ class Navigator:
         cost = 1.0
 
         # Some other character blocking the pass
-        if self.arena[sq_to].character is not None:
-            cost += 3.0
+        # if self.arena[sq_to].character is not None:
+        #     cost += 3.0
         
         # Weapons
         if sq_to in self.arena.weapons:
