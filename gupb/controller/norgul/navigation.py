@@ -135,7 +135,7 @@ class Navigator:
             if self.arena.weapons[sq_to].name in ["scroll", "amulet"]:
                 cost += 100.0
             else:
-                cost += max(0, WEAPON_VALUES[self.memory.weapon] - WEAPON_VALUES[self.arena.weapons[sq_to].name])
+                cost += max(0, WEAPON_VALUES[self.memory.weapon_name] - WEAPON_VALUES[self.arena.weapons[sq_to].name])
         
         # Potions
         if self.arena[sq_to].consumable is not None and self.arena[sq_to].consumable == "potion":

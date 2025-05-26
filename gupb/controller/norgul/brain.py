@@ -3,6 +3,8 @@ from gupb.controller.norgul.movement import MotorCortex
 from gupb.controller.norgul.navigation import Navigator
 from gupb.controller.norgul.exploration import Explorator
 from gupb.controller.norgul.collection import Collector
+from gupb.controller.norgul.combat import CombatEngine
+from gupb.controller.norgul.config import COMBAT_THRESHOLD
 
 from gupb.model import arenas
 from gupb.model import characters
@@ -31,6 +33,7 @@ class Brain:
         self.motor = MotorCortex(self.memory)
         self.explorator = Explorator(self.memory)
         self.collector = Collector(self.memory)
+        self.combat = CombatEngine(self.memory, self.navigator, self.motor)
 
         # Hyperparameters
         # TODO: move into separate config file
@@ -38,60 +41,29 @@ class Brain:
         self.mist_vec_weight = 50
         self.enemy_vec_weight = 5
     
+    # -------------------------------------
+    # Norgul's brain - main decision making
+    # -------------------------------------
 
-    # TODO: replace with better code
-    def pick_target(norgul):
-        if not norgul.memory.arena.any_mist:
-            if norgul.memory.arena[norgul.memory.pos].type == "forest":
-                return norgul.memory.pos
-            
-            target_sq = norgul.memory.arena.nearest_forest(norgul.memory.pos)
-            if target_sq is not None:
-                return target_sq
+    def decide(self) -> characters.Action | None:
+        target = self.collector.best_pickup()
+        if target is None:
+            # Try to fight someone
+            easy_target, chances = self.combat.find_target(avoid_mist=True)
+            if chances > COMBAT_THRESHOLD:
+                print("Fighting:", easy_target)
+                action = self.combat.fight_control(easy_target, safe_mode=False)
+                return action
 
-        # Calculate current important zone around our character
-        character_zone = [norgul.memory.pos + diff for diff in product(range(-norgul.radius, norgul.radius + 1),
-                                                                       range(-norgul.radius, norgul.radius + 1))]
-        character_zone = [sq for sq in character_zone if 0 <= sq[0] < norgul.memory.arena.height and 0 <= sq[1] < norgul.memory.arena.width]
+            # If you can't fight, then try to explore instead
+            target = self.explorator.pick_area()
+            print("Exploring:", target)
+        else:
+            if target == self.memory.pos:
+                target = self.memory.pos + characters.Facing.RIGHT.value      # TODO: This is a total shit and must be changed
+            print("Collecting:", target)
         
-        # Target vector
-        target_vec = np.array([0.0, 0.0])
-
-        # Mist center calculation
-        mist_mean = np.array([0.0, 0.0])
-        mist_count = 0
-
-        for sq in character_zone:
-            if norgul.memory.arena[sq].effects and ("mist",) in norgul.memory.arena[sq].effects:
-                mist_mean = mist_mean + sq
-                mist_count += 1
-            if norgul.memory.arena[sq].character is not None and sq != norgul.memory.pos:
-                vec = np.array(norgul.memory.pos) - sq
-                target_vec = target_vec + (vec * norgul.enemy_vec_weight)
-        
-        # Calculate mist center and add mist vector
-        if mist_count > 0:
-            mist_mean = mist_mean / mist_count
-            vec = np.array(norgul.memory.pos) - mist_mean
-            target_vec = target_vec + (vec * norgul.mist_vec_weight)
-        
-        
-        if target_vec[0] == 0 and target_vec[1] == 0:
-            return norgul.memory.pos
-        
-        # Normalize target vector
-        target_vec = target_vec * (1 / sqrt(target_vec[0] ** 2 + target_vec[1] ** 2))
-
-        target_sq = norgul.memory.pos
-        for i in range(1, 10):
-            some_sq = np.array(norgul.memory.pos) + target_vec * i
-            some_sq = coordinates.Coords(int(some_sq[0]), int(some_sq[1]))
-            if not (0 <= some_sq[0] < norgul.memory.arena.width) or not (0 <= some_sq[1] < norgul.memory.arena.height):
-                continue
-            if abs(some_sq[0] - norgul.memory.pos[0]) <= norgul.radius and abs(some_sq[1] - norgul.memory.pos[1]) <= norgul.radius:
-                target_sq = some_sq
-        
-        return target_sq
+        return self.move_to_target(target, fast=False)
 
     # TODO: replace with better code
     def move_to_target(norgul, target, fast=False):

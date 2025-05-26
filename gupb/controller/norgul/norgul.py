@@ -40,20 +40,8 @@ class NorgulController(controller.Controller):
             norgul.memory.update(knowledge)
 
             # Step 2
-            # - Locate target square (either escaping mist / enemies or not) !!!
-            # target = norgul.brain.pick_target()
-            target = norgul.brain.collector.best_pickup()
-            if target is None:
-                target = norgul.brain.explorator.pick_area()
-                print("Exploring:", target)
-            else:
-                if target == norgul.memory.pos:
-                    target = norgul.memory.pos + characters.Facing.RIGHT.value      # TODO: This is a total shit and must be changed
-                print("Collecting:", target)
-
-            # Step 3
-            # - Move towards target square
-            action = norgul.brain.move_to_target(target, fast=False)
+            # - Decide about the next action
+            action = norgul.brain.decide()
 
             # Step 4
             # - If target square (or set of squares) is already reached, rotate and gain more knowledge

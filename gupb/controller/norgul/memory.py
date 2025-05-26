@@ -18,7 +18,8 @@ class Memory:
         # Player state memory
         self.pos = None
         self.dir = None
-        self.weapon = "knife"
+        self.hp = None
+        self.weapon_name = "knife"
 
         # Arena state memory
         self.arena = ArenaKnowledge()
@@ -29,23 +30,24 @@ class Memory:
         # Other things
         self.time = 0
     
-    # -------------
-    # Static update
-    # -------------
+    # ----------------------
+    # Memory - static update
+    # ----------------------
 
     def reset(self) -> None:
-        self.current_pos = None
-        self.current_dir = None
-        self.current_weapon = "knife"
+        self.pos = None
+        self.dir = None
+        self.hp = None
+        self.weapon_name = "knife"
 
         self.arena.clear()
         self.exploration.areas.clear()
 
         self.time = 0
     
-    # --------------
-    # Dynamic update
-    # --------------
+    # ----------------------
+    # Memory - dynamic update
+    # ----------------------
 
     def update(self, knowledge: characters.ChampionKnowledge) -> None:
         # Start by updating the time, since it affects other things such as ExplorationKnowledge
@@ -53,7 +55,8 @@ class Memory:
 
         self.pos = knowledge.position
         self.dir = knowledge.visible_tiles[self.pos].character.facing
-        self.weapon = knowledge.visible_tiles[self.pos].character.weapon.name
+        self.hp = knowledge.visible_tiles[self.pos].character.health
+        self.weapon_name = knowledge.visible_tiles[self.pos].character.weapon.name
 
         self.arena.update(knowledge)
         self.exploration.update(knowledge, self.time)

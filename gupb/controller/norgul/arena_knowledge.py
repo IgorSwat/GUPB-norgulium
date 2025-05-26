@@ -112,6 +112,12 @@ class ArenaKnowledge:
             if self._arena[coord].effects and ("mist",) in self._arena[coord].effects:
                 self.any_mist = True
 
+            # Other players
+            if tile_info.character is not None:
+                self.players[coord] = tile_info.character
+            elif coord in self.players:
+                self.players.pop(coord)
+
     # --------------------------------
     # Arena knowledge - simple getters
     # --------------------------------

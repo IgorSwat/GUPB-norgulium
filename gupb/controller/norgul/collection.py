@@ -30,8 +30,8 @@ class Collector:
         best_pickup = None
 
         # Consider weapons only if you don't have an axe
-        if self.memory.weapon != "axe":
-            curr_weapon_value = WEAPON_VALUES[self.memory.weapon]
+        if self.memory.weapon_name != "axe":
+            curr_weapon_value = WEAPON_VALUES[self.memory.weapon_name]
 
             for sq, weapon in self.memory.arena.weapons.items():
                 value_gain = WEAPON_VALUES[weapon.name] - curr_weapon_value
@@ -48,7 +48,7 @@ class Collector:
                 # - NOTE: This is unefficient, but since there are only 13 players at most, we can get away with that
                 for e_sq, enemy in self.memory.arena.players.items():
                     enemy_dist = manhattan_dist(e_sq, sq)
-                    if enemy_dist <= our_dist and enemy.weapon.name != weapon.name:
+                    if enemy_dist <= our_dist:
                         priority *= COLLECTION_ENEMY_FACTOR ** min(10, our_dist - enemy_dist + 1)
                 
                 if priority > max_priority:
@@ -64,7 +64,7 @@ class Collector:
             # We do the same as for weapons
             for e_sq, enemy in self.memory.arena.players.items():
                 enemy_dist = manhattan_dist(e_sq, sq)
-                if enemy_dist <= our_dist and enemy.weapon.name != weapon.name:
+                if enemy_dist <= our_dist:
                     priority *= COLLECTION_ENEMY_FACTOR ** min(10, our_dist - enemy_dist + 1)
                 
             if priority > max_priority:
