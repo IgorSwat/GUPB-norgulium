@@ -51,6 +51,10 @@ class Brain:
 
         if target is not None and not self.navigator.find_path(self.memory.pos, target)[1]:
             self.memory.arena[target].loot = None
+            if target in self.memory.arena.weapons:
+                self.memory.arena.weapons.pop(target)
+            if target in self.memory.arena.potions:
+                self.memory.arena.potions.remove(target)
 
         if target is None:
             # Try to fight someone
