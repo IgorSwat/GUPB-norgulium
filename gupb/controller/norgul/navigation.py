@@ -87,17 +87,20 @@ class Navigator:
         # Reconstruct the path
         current_sq = sq_to
 
+        can_achieve_to = True
+
         # No path from sq_from to sq_to
         # - In this case we want to return a path to square which is as close to sq_to as possible
         if previous[current_sq] is None:
             current_sq = closest_alternative
+            can_achieve_to = False
             if closest_alternative == sq_from:
                 return sq_from, False
    
         while previous[current_sq] != sq_from:
             current_sq = previous[current_sq]
         
-        return current_sq, True
+        return current_sq, can_achieve_to
     
     # --------------------------------------
     # Navigator - connection cost estimation
