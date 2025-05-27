@@ -48,7 +48,7 @@ class Brain:
 
     def decide(self) -> characters.Action | None:
         target = self.collector.best_pickup()
-        if target is None:
+        if target is None or not self.navigator.find_path(self.memory.pos, target)[1]:
             # Try to fight someone
             avoid_mnist = True
             if self.memory.arena.obelisk_pos is not None and max_dist(self.memory.pos, self.memory.arena.obelisk_pos) < 5:
@@ -83,7 +83,7 @@ class Brain:
     def move_to_target(norgul, target, fast=False):
         """If Fast -> do not waste moves to turn"""
 
-        next_sq = norgul.navigator.find_path(norgul.memory.pos, target)
+        next_sq, _ = norgul.navigator.find_path(norgul.memory.pos, target)
 
         if norgul.memory.pos != next_sq:
             return norgul.motor.move_to(next_sq, quick=fast)

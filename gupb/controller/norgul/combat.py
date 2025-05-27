@@ -127,7 +127,7 @@ class CombatEngine:
         # quick = bool(max_dist(self.memory.pos, best_spot) <= 2)
         quick = False
 
-        next_sq = self.navigator.find_path(self.memory.pos, best_spot)
+        next_sq, _ = self.navigator.find_path(self.memory.pos, best_spot)
         action = self.motor.move_to(next_sq, quick=quick)
 
         return action

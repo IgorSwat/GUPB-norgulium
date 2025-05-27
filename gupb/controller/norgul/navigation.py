@@ -8,6 +8,7 @@ import heapq
 
 from collections import defaultdict
 from math import inf
+from typing import Tuple
 
 
 # ---------------
@@ -27,12 +28,12 @@ class Navigator:
 
     # Djikstra algorithm
     # - NOTE: Uses A* extension for speed-up
-    def find_path(self, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> coordinates.Coords:
+    def find_path(self, sq_from: coordinates.Coords, sq_to: coordinates.Coords) -> Tuple[coordinates.Coords, bool]:
         '''
             Performs Djikstra algorithm to find the best (defined by connection weights) path from sq_from to sq_to.
 
             Returns next square on the quickest path from sq_from to sq_to.
-            Alternatively, if sq_to is unreachable, returns next square on the quickest path to square that is closest to sq_to.
+            Alternatively, if sq_to is unreachable, returns next square on the quickest path to square that is closest to sq_to (and False as 2nd).
         '''
 
         if sq_from == sq_to:
@@ -91,12 +92,12 @@ class Navigator:
         if previous[current_sq] is None:
             current_sq = closest_alternative
             if closest_alternative == sq_from:
-                return sq_from
+                return sq_from, False
    
         while previous[current_sq] != sq_from:
             current_sq = previous[current_sq]
         
-        return current_sq
+        return current_sq, True
     
     # --------------------------------------
     # Navigator - connection cost estimation
