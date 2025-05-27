@@ -48,7 +48,11 @@ class Brain:
 
     def decide(self) -> characters.Action | None:
         target = self.collector.best_pickup()
-        if target is None or not self.navigator.find_path(self.memory.pos, target)[1]:
+
+        if target is not None and not self.navigator.find_path(self.memory.pos, target)[1]:
+            self.memory.arena[target].loot = None
+
+        if target is None:
             # Try to fight someone
             avoid_mnist = True
             if self.memory.arena.obelisk_pos is not None and max_dist(self.memory.pos, self.memory.arena.obelisk_pos) < 5:
