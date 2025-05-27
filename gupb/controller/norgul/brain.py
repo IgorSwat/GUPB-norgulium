@@ -52,7 +52,7 @@ class Brain:
         if target is None or not self.navigator.find_path(self.memory.pos, target)[1]:
             # Try to fight someone
             avoid_mnist = True
-            if self.memory.arena.obelisk_pos is not None and max_dist(self.memory.pos, self.memory.arena.obelisk_pos) < 5:
+            if self.memory.arena.obelisk_pos is not None and max_dist(self.memory.pos, self.memory.arena.obelisk_pos) < 8:
                 avoid_mnist = False
             easy_target, chances = self.combat.find_target(avoid_mist=avoid_mnist)
 
