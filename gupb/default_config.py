@@ -1,5 +1,6 @@
 from gupb.controller import keyboard
 from gupb.controller import random
+from gupb.controller.neat.kim_dzong_neat_mid import KimDzongNeatMidController
 from gupb.controller.camperbot import camperbot
 from gupb.controller.neat import kim_dzong_neat_jr
 from gupb.controller import kirby
@@ -21,6 +22,10 @@ CONFIGURATION = {
     ],
     'controllers': [
         random.RandomController("Alice"),
+        random.RandomController("Bob"),
+        random.RandomController("Cecilia"),
+        random.RandomController("Darius"),
+        KimDzongNeatMidController(),
         camperbot.CamperBotController("Camper"),
         kim_dzong_neat_jr.KimDzongNeatJuniorController(),
         kirby.KirbyController("Kirby"),
